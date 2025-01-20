@@ -1,0 +1,46 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --require dotenv/config index.js",
+    "start:dev": "nodemon index.js",
+    "start:dev:log": "nodemon index.js 2>&1 | tee -a logs/nodemon.log",
+    "clean-install": "node scripts/clean-install",
+    "git:log": "node scripts/git-log",
+    "backup": "node scripts/backup",
+    "restore": "node scripts/restore",
+    "migrate": "sequelize-cli db:migrate",
+    "migarte:undo": "sequelize-cli db:migrate:undo"
+  },
+  "keywords": [],
+  "author": "Sevak Mikichyan",
+  "license": "ISC",
+  "description": "Test for node js",
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "sequelize-cli": "^6.6.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "chalk": "^4.1.2",
+    "child_process": "^1.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.12.0",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
+    "redis": "^4.7.0",
+    "sequelize": "^6.37.5",
+    "twilio": "^5.4.2",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+    "verbose": false,
+    "quiet": true,
+    "events": {
+        "start": "clear"
+    }
+}
