@@ -3,7 +3,7 @@ const chalk = require('chalk');
 const { redisClient } = require('./src/config/redis-client');
 const { User } = require('./src/models/user-model');
 
-const connectToWebSocketServer = (server) => {
+const connect_to_ws_server = (server) => {
     return new Promise((resolve, reject) => {
         try {
             const wss = new WebSocket.Server({ server });
@@ -48,4 +48,4 @@ const connectToWebSocketServer = (server) => {
     });
 };
 
-module.exports = { connectToWebSocketServer };
+module.exports = { connect_to_ws_server };

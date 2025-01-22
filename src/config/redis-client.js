@@ -8,4 +8,15 @@ const redisClient = redis.createClient({
     port: REDIS_PORT
 });
 
-module.exports = { redisClient };
+const connect_to_redis = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            await redisClient.connect();
+            resolve();
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
+module.exports = { redisClient, connect_to_redis };

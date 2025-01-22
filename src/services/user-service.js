@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const { User } = require("../models/user-model");
 const { Result } = require("../utils/result");
@@ -9,15 +9,6 @@ const { sendMail } = require('../config/nodemailer');
 const { sendSMS } = require('../config/twilio');
 
 class UserService {
-    constructor() {
-        this.getProfile = this.getProfile.bind(this);
-        this.getUser = this.getUser.bind(this);
-        this.deleteUser = this.deleteUser.bind(this);
-        this.updateUser = this.updateUser.bind(this);
-        this.changePassword = this.changePassword.bind(this);
-        this.forgotPassword = this.forgotPassword.bind(this);
-    }
-
     async getProfile(request) {
         try {
             const id = Number(request.params.id);
@@ -148,7 +139,7 @@ class UserService {
                 return new Result(404, "User with that email not found");
             }
 
-            const verificationCode = createVerificationCode(6);
+            const verificationCode = createVerificationCode(2, 6);
             const hashedVerificationCode = await bcrypt.hash(verificationCode, 10);
 
             await redisClient.set(`${email}:verificationCode`, hashedVerificationCode);

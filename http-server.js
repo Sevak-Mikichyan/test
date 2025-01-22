@@ -11,12 +11,11 @@ const { userController } = require('./src/controllers/user-controller');
 
 const app = express();
 
-const CLIENT_URI = process.env.CLIENT_URI || "http://localhost:3001";
 const logFilePath = path.join(__dirname, "logs", "morgan.log");
 const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
 
 app.use(cors({
-    origin: [CLIENT_URI],
+    origin: ["http://localhost:3001"],
     methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true
@@ -35,4 +34,20 @@ app.use('/api/user', userController);
 
 const server = http.createServer(app);
 
-module.exports = { server };
+const connect_to_http_server = async (port, host = "localhost") => {
+    return new Promise((resolve, reject) => {
+        try {
+            server.listen(port, host, () => {
+                resolve();
+            });
+
+            server.on("error", (e) => {
+                reject(e);
+            });
+        } catch (e) {
+            return reject(e);
+        }
+    });
+};
+
+module.exports = { server, connect_to_http_server };

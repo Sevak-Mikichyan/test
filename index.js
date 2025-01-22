@@ -2,21 +2,21 @@ const dotenv = require('dotenv');
 dotenv.config();
 const cron = require('node-cron');
 const chalk = require('chalk');
-const { server } = require('./server');
-const { sequelize } = require('./src/config/sequelize');
-const { redisClient } = require('./src/config/redis-client');
-const { connectToWebSocketServer } = require('./ws-server');
+const { server, connect_to_http_server } = require('./http-server');
+const { connect_to_ws_server } = require('./ws-server');
+const { connect_to_pg_sql } = require('./src/config/sequelize');
+const { connect_to_mongo_db } = require('./src/config/mongoose');
+const { connect_to_redis } = require('./src/config/redis-client');
 const { autoBackup } = require('./src/utils/auto-backup');
 const { Message } = require('./src/utils/message');
-const { connectToMongoDB } = require('./src/config/mongoose');
 
-const SERVER_PORT = process.env.SERVER_PORT || 5001;
-const SERVER_HOST = process.env.SERVER_HOST || "localhost";
-const SERVER_URI = process.env.SERVER_URI || `http://${SERVER_HOST}:${SERVER_PORT}`;
-const WSS_URI = process.env.WSS_URI || `ws://localhost:${SERVER_PORT}`;
-const PG_URI = process.env.PG_URI || "postgresql://postgres:1596@localhost:5432/database";
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/database";
-const REDIS_URI = process.env.REDIS_URI || "redis://localhost:6379"
+const HTTP_SERVER_PORT = process.env.HTTP_SERVER_PORT;
+const HTTP_SERVER_HOST = process.env.HTTP_SERVER_HOST;
+const HTTP_SERVER_URI = process.env.HTTP_SERVER_URI;
+const WS_SERVER_URI = process.env.WS_SERVER_URI;
+const PG_SQL_URI = process.env.PG_SQL_URI;
+const MONGO_DB_URI = process.env.MONGO_DB_URI;
+const REDIS_URI = process.env.REDIS_URI
 const TIMEZONE = process.env.TIMEZONE || "UTC";
 
 !async function () {
@@ -28,57 +28,59 @@ const TIMEZONE = process.env.TIMEZONE || "UTC";
         console.log(chalk.green("[nodemon] starting `node index.js`"));
         console.log("");
 
-        server.listen(SERVER_PORT, SERVER_HOST, async () => {
-            Message.success("HTTP server connected successfully", SERVER_URI);
-            try {
-                await connectToWebSocketServer(server);
-                Message.success("Websocket server connected successfully", WSS_URI);
-            } catch (e) {
-                Message.error("Failed to connect to the websocket server", e);
-                process.exit(1);
-            }
+        try {
+            await connect_to_http_server(HTTP_SERVER_PORT, HTTP_SERVER_HOST);
+            Message.success("HTTP server connected successfully", HTTP_SERVER_URI);
+        } catch (e) {
+            Message.error("Failed to connect to the HTTP server", e);
+            process.exit(1);
+        }
 
-            try {
-                await sequelize.authenticate();
-                Message.success("PostgreSQL database connected successfully", PG_URI);
-            } catch (e) {
-                Message.error("Failed to connect to the postgresql database", e);
-                process.exit(1);
-            }
+        try {
+            await connect_to_ws_server(server);
+            Message.success("Websocket server connected successfully", WS_SERVER_URI);
+        } catch (e) {
+            Message.error("Failed to connect to the WebSocket server", e);
+            process.exit(1);
+        }
 
-            try {
-                await connectToMongoDB();
-                Message.success("MongoDB connected successfully", MONGO_URI);
-            } catch (e) {
-                Message.error("Failed to connect to the MongoDB", e);
-                process.exit(1);
-            }
+        try {
+            await connect_to_pg_sql();
+            Message.success("PostgreSQL database connected successfully", PG_SQL_URI);
+        } catch (e) {
+            Message.error("Failed to connect to the PostgreSQL", e);
+            process.exit(1);
+        }
 
-            try {
-                await redisClient.connect();
-                Message.success("Redis client connected successfully", REDIS_URI);
-            } catch (e) {
-                Message.error("Failed to connect to the redis client", e);
-                process.exit(1);
-            }
+        try {
+            await connect_to_mongo_db();
+            Message.success("MongoDB connected successfully", MONGO_DB_URI);
+        } catch (e) {
+            Message.error("Failed to connect to the MongoDB", e);
+            process.exit(1);
+        }
 
-            cron.schedule("0 0 * * * *", async () => {
-                try {
-                    const backupPath = await autoBackup(5);
-                    Message.success("Backup completed successfuly", backupPath);
-                } catch (e) {
-                    Message.error("Error during backup process", e);
-                }
-            }, { TIMEZONE });
-        });
+        try {
+            await connect_to_redis();
+            Message.success("Redis client connected successfully", REDIS_URI);
+        } catch (e) {
+            Message.error("Failed to connect to the Redis", e);
+            process.exit(1);
+        }
+
+
+        cron.schedule("0 0 * * * ", async () => {
+            try {
+                const backupPath = await autoBackup(5);
+                Message.success("Backup completed successfuly", backupPath);
+            } catch (e) {
+                Message.error("Error during backup process", e);
+            }
+        }, { timezone: TIMEZONE });
+
 
     } catch (e) {
         console.error(e);
         process.exit(1);
     }
 }();
-
-server.on("error", (e) => {
-    Message.error("Failed to connect to the HTTP server", e);
-    process.exit(1);
-});

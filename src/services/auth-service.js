@@ -6,20 +6,6 @@ const { User } = require("../models/user-model");
 const { redisClient } = require('../config/redis-client');
 
 class AuthService {
-    #JWT_SECRET_KEY;
-    #JWT_ACCESS_TOKEN_EXPIRES_IN;
-    #JWT_REFRESH_TOKEN_EXPIRES_IN;
-
-    constructor() {
-        this.registration = this.registration.bind(this);
-        this.login = this.login.bind(this);
-        this.refreshTokens = this.refreshTokens.bind(this);
-        this.logout = this.logout.bind(this);
-
-        this.#JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || "x8d1h9t7v7kz0s5n3w4nflb0yqmrc0x1g7h1";
-        this.#JWT_ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || "1h";
-        this.#JWT_REFRESH_TOKEN_EXPIRES_IN = process.env.JWT_REFRESH_TOKEN_EXPIRES_IN || "7d";
-    }
 
     async registration(request) {
         try {
@@ -50,8 +36,8 @@ class AuthService {
             });
 
             const userDataForToken = { id: newUser.id, username: newUser.username };
-            const refreshToken = this.#generateToken(userDataForToken, this.#JWT_REFRESH_TOKEN_EXPIRES_IN);
-            const accessToken = this.#generateToken(userDataForToken, this.#JWT_ACCESS_TOKEN_EXPIRES_IN);
+            const refreshToken = this.#generateToken(userDataForToken, "7d");
+            const accessToken = this.#generateToken(userDataForToken, "1h");
 
             newUser.refreshToken = refreshToken;
             await newUser.save();
@@ -109,11 +95,11 @@ class AuthService {
             }
 
             const userDataForToken = { id: user.id, username: user.username };
-            const accessToken = this.#generateToken(userDataForToken, this.#JWT_ACCESS_TOKEN_EXPIRES_IN);
-            const refreshToken = this.#generateToken(userDataForToken, this.#JWT_REFRESH_TOKEN_EXPIRES_IN);
+            const accessToken = this.#generateToken(userDataForToken, "1h");
+            const refreshToken = this.#generateToken(userDataForToken, "7d");
 
             await User.update({ refreshToken }, { where: { id: user.id } });
-            await redisClient.del(`${email}:failedAttempts`); // Clear failed attempts on successful login
+            await redisClient.del(`${email}:failedAttempts`);
 
             return new Result(200, "Logged in successfully", { accessToken, refreshToken });
         } catch (e) {
@@ -146,14 +132,14 @@ class AuthService {
             }
 
             try {
-                const userData = jwt.verify(refreshToken, this.#JWT_SECRET_KEY);
+                const userData = this.#verifyToken(refreshToken);
                 const user = await User.findOne({ where: { id: userData.id, refreshToken } });
 
                 if (!user) return new Result(403, "Invalid refresh token");
 
                 const userDataForToken = { id: user.id, username: user.username };
-                const newAccessToken = this.#generateToken(userDataForToken, this.#JWT_ACCESS_TOKEN_EXPIRES_IN);
-                const newRefreshToken = this.#generateToken(userDataForToken, this.#JWT_REFRESH_TOKEN_EXPIRES_IN);
+                const newAccessToken = this.#generateToken(userDataForToken, "1h");
+                const newRefreshToken = this.#generateToken(userDataForToken, "7d");
 
                 user.refreshToken = newRefreshToken;
                 await user.save();
@@ -172,7 +158,11 @@ class AuthService {
     }
 
     #generateToken(userData, expiresIn) {
-        return jwt.sign(userData, this.#JWT_SECRET_KEY, { expiresIn });
+        return jwt.sign(userData, process.env.JWT_SECRET_KEY, { expiresIn });
+    }
+
+    #verifyToken(token) {
+        return jwt.verify(token, process.env.JWT_SECRET_KEY);
     }
 }
 

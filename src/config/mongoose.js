@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/database";
+const MONGO_DB_URI = process.env.MONGO_DB_URI;
 
-const connectToMongoDB = () => {
+const connect_to_mongo_db = () => {
     return new Promise((resolve, reject) => {
         try {
-            mongoose.set('debug', false);
-            mongoose.connect(MONGO_URI);
+            mongoose.set("debug", false);
+            mongoose.connect(MONGO_DB_URI);
             return resolve();
         } catch (e) {
             return reject(e);
@@ -14,4 +14,4 @@ const connectToMongoDB = () => {
     });
 };
 
-module.exports = { connectToMongoDB };
+module.exports = { connect_to_mongo_db };

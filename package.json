@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node --require dotenv/config index.js",
+    "start": "node index.js",
     "start:dev": "nodemon index.js",
     "start:dev:log": "nodemon index.js 2>&1 | tee -a logs/nodemon.log",
     "clean-install": "node scripts/clean-install",
